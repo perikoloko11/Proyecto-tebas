@@ -1,0 +1,66 @@
+services:
+
+  db:
+    image: mysql:8.0
+    container_name: laliga-db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpass
+      MYSQL_DATABASE:      laliga
+      MYSQL_USER:          laliga
+      MYSQL_PASSWORD:      laligapass
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - laliga-net
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "laliga", "-plaligapass"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 30s
+
+  backend:
+    build:
+      context: ./backend
+    container_name: laliga-backend
+    restart: unless-stopped
+    environment:
+      DB_HOST:        db
+      DB_PORT:        "3306"
+      DB_NAME:        laliga
+      DB_USER:        laliga
+      DB_PASS:        laligapass
+      SECRET_KEY:     secreto-laliga-2024
+      JWT_SECRET_KEY: jwt-secreto-laliga-2024
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - laliga-net
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5001/api/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: laliga-frontend
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - laliga-net
+
+volumes:
+  mysql_data:
+
+networks:
+  laliga-net:
+    driver: bridge

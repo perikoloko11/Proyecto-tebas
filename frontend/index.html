@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LaLiga — Alineaciones</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;700;900&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ─── RESET & ROOT ─────────────────────────────────────────────────────────── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --green:#00c853;
+  --green-dim:#00a844;
+  --pitch:#1a4726;
+  --pitch-light:#1f5530;
+  --dark:#080f0a;
+  --surface:#0e1a10;
+  --card:#121f14;
+  --border:rgba(0,200,83,.13);
+  --text:#e8f5e9;
+  --muted:#6b8f71;
+  --red:#ff1744;
+  --yellow:#ffd600;
+  --blue:#2979ff;
+}
+html{scroll-behavior:smooth}
+body{
+  font-family:'Barlow',sans-serif;
+  background:var(--dark);
+  color:var(--text);
+  min-height:100vh;
+  background-image:
+    radial-gradient(ellipse 60% 40% at 10% 0%,rgba(0,200,83,.07) 0%,transparent 70%),
+    radial-gradient(ellipse 50% 50% at 90% 100%,rgba(0,200,83,.05) 0%,transparent 70%);
+}
+
+/* ─── NAV ──────────────────────────────────────────────────────────────────── */
+nav{
+  position:sticky;top:0;z-index:200;
+  background:rgba(8,15,10,.92);
+  backdrop-filter:blur(18px);
+  border-bottom:1px solid var(--border);
+  padding:0 2rem;
+  height:60px;
+  display:flex;align-items:center;justify-content:space-between;
+}
+.logo{
+  font-family:'Barlow Condensed',sans-serif;
+  font-weight:900;font-size:1.6rem;letter-spacing:1px;
+  color:var(--green);text-decoration:none;display:flex;align-items:center;gap:8px;
+}
+.logo span{color:var(--text)}
+.nav-right{display:flex;align-items:center;gap:12px}
+.user-pill{
+  display:flex;align-items:center;gap:8px;
+  background:rgba(0,200,83,.08);border:1px solid var(--border);
+  border-radius:50px;padding:5px 14px;font-size:.82rem;
+}
+.role-badge{
+  font-size:.68rem;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;
+  padding:2px 8px;border-radius:50px;
+}
+.role-badge.admin{background:var(--green);color:#000}
+.role-badge.user{background:rgba(255,255,255,.12);color:var(--text)}
+
+/* ─── BUTTONS ──────────────────────────────────────────────────────────────── */
+.btn{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:7px 16px;border-radius:6px;font-size:.85rem;font-weight:600;
+  cursor:pointer;border:none;text-decoration:none;transition:all .18s;font-family:inherit;
+}
+.btn-green{background:var(--green);color:#000}
+.btn-green:hover{background:var(--green-dim);transform:translateY(-1px)}
+.btn-ghost{background:transparent;color:var(--text);border:1px solid var(--border)}
+.btn-ghost:hover{border-color:var(--green);color:var(--green)}
+.btn-red{background:rgba(255,23,68,.15);color:#ff6b6b;border:1px solid rgba(255,23,68,.25)}
+.btn-red:hover{background:rgba(255,23,68,.25)}
+.btn-sm{padding:5px 11px;font-size:.78rem}
+.btn-icon{padding:6px 10px;border-radius:6px}
+
+/* ─── VIEWS ────────────────────────────────────────────────────────────────── */
+.view{display:none !important}
+.view.active{display:block !important}
+#view-login.active{display:flex !important}
+
+/* ─── HERO ─────────────────────────────────────────────────────────────────── */
+.hero{
+  padding:4rem 2rem 3rem;
+  max-width:1200px;margin:0 auto;
+}
+.hero-label{
+  font-family:'Barlow Condensed',sans-serif;
+  font-size:.8rem;letter-spacing:4px;text-transform:uppercase;
+  color:var(--green);margin-bottom:.75rem;display:block;
+}
+.hero h1{
+  font-family:'Barlow Condensed',sans-serif;
+  font-weight:900;font-size:clamp(3rem,8vw,6rem);
+  line-height:.9;letter-spacing:-1px;
+  text-transform:uppercase;
+}
+.hero h1 em{color:var(--green);font-style:normal}
+.hero-sub{color:var(--muted);margin-top:1rem;font-size:1rem;font-weight:300}
+
+/* ─── ADMIN BANNER ─────────────────────────────────────────────────────────── */
+.admin-banner{
+  background:linear-gradient(135deg,rgba(0,200,83,.12),rgba(0,200,83,.04));
+  border:1px solid rgba(0,200,83,.3);border-radius:10px;
+  padding:12px 20px;margin:0 2rem 1.5rem;
+  max-width:1200px;margin-left:auto;margin-right:auto;
+  display:flex;align-items:center;gap:10px;font-size:.88rem;color:var(--green);
+}
+.admin-banner strong{color:#fff}
+
+/* ─── FLASH ────────────────────────────────────────────────────────────────── */
+#flash-container{position:fixed;bottom:24px;right:24px;z-index:999;display:flex;flex-direction:column;gap:8px}
+.flash{
+  padding:12px 18px;border-radius:8px;font-size:.88rem;font-weight:500;
+  animation:slideIn .3s ease;min-width:240px;max-width:360px;
+  display:flex;align-items:center;gap:10px;
+}
+.flash.success{background:#1b3a1f;border:1px solid rgba(0,200,83,.4);color:#69f0ae}
+.flash.error{background:#3a1b1b;border:1px solid rgba(255,23,68,.4);color:#ff8a80}
+.flash.info{background:#1b2a3a;border:1px solid rgba(41,121,255,.4);color:#82b1ff}
+@keyframes slideIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
+
+/* ─── TEAMS GRID ────────────────────────────────────────────────────────────── */
+.section{max-width:1200px;margin:0 auto;padding:0 2rem 3rem}
+.section-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem}
+.section-title{font-family:'Barlow Condensed',sans-serif;font-size:1.4rem;font-weight:700;text-transform:uppercase;letter-spacing:1px}
+
+.teams-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1rem}
+.team-card{
+  background:var(--card);border:1px solid var(--border);border-radius:12px;
+  padding:1.25rem;cursor:pointer;transition:all .2s;
+  display:flex;flex-direction:column;gap:.75rem;position:relative;overflow:hidden;
+}
+.team-card::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:3px;
+  background:var(--tc,#e63946);opacity:.7;
+}
+.team-card:hover{transform:translateY(-3px);border-color:rgba(0,200,83,.3);box-shadow:0 8px 32px rgba(0,0,0,.5)}
+.team-card-top{display:flex;align-items:center;gap:12px}
+.team-emoji{
+  font-size:2rem;width:52px;height:52px;
+  background:rgba(255,255,255,.05);border-radius:10px;
+  display:grid;place-items:center;flex-shrink:0;
+}
+.team-name{font-family:'Barlow Condensed',sans-serif;font-size:1.2rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px}
+.team-city{color:var(--muted);font-size:.8rem;margin-top:2px}
+.team-meta{display:flex;justify-content:space-between;font-size:.78rem;color:var(--muted);padding-top:.75rem;border-top:1px solid rgba(255,255,255,.05)}
+.team-meta span{display:flex;align-items:center;gap:4px}
+
+/* ─── TEAM DETAIL ────────────────────────────────────────────────────────────── */
+.detail-header{
+  background:var(--surface);border-bottom:1px solid var(--border);
+  padding:2rem;
+}
+.detail-header-inner{max-width:1200px;margin:0 auto}
+.detail-top{display:flex;align-items:flex-start;gap:1.5rem;flex-wrap:wrap}
+.detail-emoji{font-size:4rem;background:rgba(255,255,255,.05);border-radius:16px;width:88px;height:88px;display:grid;place-items:center;flex-shrink:0}
+.detail-info h1{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:2.8rem;text-transform:uppercase;letter-spacing:-1px;line-height:1}
+.detail-meta{display:flex;flex-wrap:wrap;gap:1.5rem;margin-top:.5rem;font-size:.85rem;color:var(--muted)}
+.detail-meta span{display:flex;align-items:center;gap:5px}
+.detail-actions{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap}
+
+/* ─── PITCH ──────────────────────────────────────────────────────────────────── */
+.pitch-wrap{max-width:1200px;margin:2rem auto 0;padding:0 2rem}
+.pitch-section-title{font-family:'Barlow Condensed',sans-serif;font-size:1.3rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:1rem}
+.pitch{
+  background:var(--pitch);border:2px solid rgba(255,255,255,.08);border-radius:12px;
+  padding:2rem 1rem;position:relative;min-height:320px;
+  background-image:
+    linear-gradient(rgba(255,255,255,.03) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(255,255,255,.03) 1px,transparent 1px);
+  background-size:40px 40px;
+}
+/* Pitch markings */
+.pitch::before{content:'';position:absolute;top:50%;left:10%;right:10%;height:2px;background:rgba(255,255,255,.08)}
+.pitch::after{content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:80px;height:80px;border:2px solid rgba(255,255,255,.08);border-radius:50%}
+.pitch-row{display:flex;justify-content:space-around;margin-bottom:1.75rem;position:relative;z-index:1}
+.pitch-row:last-child{margin-bottom:0}
+.pitch-player{display:flex;flex-direction:column;align-items:center;gap:5px}
+.pitch-num{
+  width:36px;height:36px;border-radius:50%;
+  background:var(--green);color:#000;font-weight:700;font-size:.9rem;
+  display:grid;place-items:center;border:2px solid rgba(255,255,255,.2);
+  transition:transform .2s;
+}
+.pitch-player:hover .pitch-num{transform:scale(1.15)}
+.pitch-pname{font-size:.68rem;color:rgba(255,255,255,.8);text-align:center;max-width:70px;line-height:1.2;font-weight:600}
+
+/* ─── PLAYER TABLE ───────────────────────────────────────────────────────────── */
+.player-section{max-width:1200px;margin:2rem auto;padding:0 2rem}
+.table-card{background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+.table-card-header{
+  padding:1rem 1.5rem;border-bottom:1px solid var(--border);
+  display:flex;justify-content:space-between;align-items:center;
+}
+table{width:100%;border-collapse:collapse}
+th{padding:10px 14px;text-align:left;font-size:.72rem;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);border-bottom:1px solid var(--border)}
+td{padding:11px 14px;font-size:.88rem;border-bottom:1px solid rgba(255,255,255,.03)}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(255,255,255,.02)}
+
+.num-pill{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:28px;height:28px;border-radius:50%;font-weight:700;font-size:.82rem;
+  background:rgba(0,200,83,.15);color:var(--green);border:1px solid rgba(0,200,83,.25);
+}
+.pos-pill{
+  display:inline-block;padding:3px 10px;border-radius:50px;font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;
+}
+.pos-Portero{background:rgba(255,23,68,.15);color:#ff6b6b;border:1px solid rgba(255,23,68,.25)}
+.pos-Defensa{background:rgba(41,121,255,.15);color:#82b1ff;border:1px solid rgba(41,121,255,.25)}
+.pos-Centrocampista{background:rgba(255,214,0,.15);color:#ffd600;border:1px solid rgba(255,214,0,.25)}
+.pos-Delantero{background:rgba(0,200,83,.15);color:#69f0ae;border:1px solid rgba(0,200,83,.25)}
+
+/* ─── MODAL ──────────────────────────────────────────────────────────────────── */
+.overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,.8);backdrop-filter:blur(6px);
+  z-index:500;display:grid;place-items:center;padding:1rem;
+  animation:fadeIn .2s ease;
+}
+.overlay.hidden{display:none}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.modal{
+  background:var(--surface);border:1px solid var(--border);border-radius:16px;
+  padding:2rem;width:100%;max-width:480px;animation:popIn .25s ease;
+  max-height:90vh;overflow-y:auto;
+}
+@keyframes popIn{from{transform:scale(.95);opacity:0}to{transform:scale(1);opacity:1}}
+.modal h2{font-family:'Barlow Condensed',sans-serif;font-size:1.5rem;font-weight:700;text-transform:uppercase;margin-bottom:1.5rem}
+.form-group{margin-bottom:1rem}
+label{display:block;font-size:.78rem;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px}
+input,select{
+  width:100%;background:var(--dark);border:1px solid var(--border);border-radius:8px;
+  padding:9px 12px;color:var(--text);font-size:.9rem;font-family:inherit;outline:none;transition:border-color .18s;
+}
+input:focus,select:focus{border-color:var(--green)}
+select option{background:var(--dark)}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:.75rem}
+.modal-actions{display:flex;gap:8px;margin-top:1.5rem}
+
+/* ─── LOGIN ──────────────────────────────────────────────────────────────────── */
+#view-login{
+  min-height:100vh;display:flex;align-items:center;justify-content:center;
+  background:var(--dark);padding:1rem;
+}
+.login-box{
+  width:100%;max-width:400px;
+  background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:2.5rem;
+}
+.login-logo{text-align:center;margin-bottom:2rem}
+.login-logo .big{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:2.5rem;color:var(--green);letter-spacing:1px}
+.login-logo p{color:var(--muted);font-size:.85rem;margin-top:4px}
+.login-hint{
+  margin-top:1.5rem;padding:1rem;border-radius:8px;
+  background:rgba(0,200,83,.05);border:1px solid var(--border);font-size:.8rem;
+}
+.login-hint p{color:var(--muted);margin-bottom:.5rem}
+.hint-row{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid rgba(255,255,255,.04);font-size:.78rem}
+.hint-row:last-child{border:none}
+.hint-row .tag{color:var(--green)}
+
+/* ─── ADMIN PANEL ────────────────────────────────────────────────────────────── */
+.admin-table-wrap{background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+
+/* ─── RESPONSIVE ─────────────────────────────────────────────────────────────── */
+@media(max-width:600px){
+  .hero{padding:2rem 1rem 1.5rem}
+  .hero h1{font-size:3rem}
+  .section,.detail-header,.pitch-wrap,.player-section{padding-left:1rem;padding-right:1rem}
+  nav{padding:0 1rem}
+  .form-row{grid-template-columns:1fr}
+  .detail-actions{margin-left:0;width:100%}
+}
+
+/* ─── LOADING ─────────────────────────────────────────────────────────────────── */
+.spinner{
+  width:36px;height:36px;border:3px solid rgba(0,200,83,.15);
+  border-top-color:var(--green);border-radius:50%;animation:spin .7s linear infinite;
+  margin:3rem auto;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+.empty-state{text-align:center;padding:3rem;color:var(--muted)}
+.empty-state .icon{font-size:3rem;margin-bottom:.75rem}
+
+/* color dot */
+.color-dot{width:14px;height:14px;border-radius:50%;display:inline-block;border:2px solid rgba(255,255,255,.2);vertical-align:middle}
+</style>
+</head>
+<body>
+
+<!-- ─── FLASH ─────────────────────────────────────────────────────────────────── -->
+<div id="flash-container"></div>
+
+<!-- ─── OVERLAY MODAL ─────────────────────────────────────────────────────────── -->
+<div class="overlay hidden" id="overlay" onclick="closeModal(event)">
+  <div class="modal" id="modal" onclick="event.stopPropagation()"></div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════════════════ -->
+<!-- VIEW: LOGIN                                                                  -->
+<!-- ════════════════════════════════════════════════════════════════════════════ -->
+<div id="view-login" class="view active">
+  <div class="login-box">
+    <div class="login-logo">
+      <div class="big">⚽ LaLiga</div>
+      <p>Alineaciones y plantillas 2024/25</p>
+    </div>
+    <form id="login-form" onsubmit="handleLogin(event)">
+      <div class="form-group">
+        <label>Usuario</label>
+        <input type="text" id="login-user" placeholder="admin o usuario" required autocomplete="username">
+      </div>
+      <div class="form-group">
+        <label>Contraseña</label>
+        <input type="password" id="login-pass" placeholder="••••••••" required autocomplete="current-password">
+      </div>
+      <button type="submit" class="btn btn-green" style="width:100%;justify-content:center;padding:11px;font-size:.95rem;margin-top:.5rem">
+        Entrar →
+      </button>
+    </form>
+    <div class="login-hint">
+      <p>Credenciales de prueba:</p>
+      <div class="hint-row"><span><span class="tag">Admin</span> admin</span><span>Admin1234!</span></div>
+      <div class="hint-row"><span><span class="tag">User</span> usuario</span><span>User1234!</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════════════════ -->
+<!-- VIEW: TEAMS LIST                                                             -->
+<!-- ════════════════════════════════════════════════════════════════════════════ -->
+<div id="view-teams" class="view">
+  <nav>
+    <a class="logo" href="#" onclick="showTeams()">⚽ <span>La</span>Liga</a>
+    <div class="nav-right">
+      <div class="user-pill" id="nav-user"></div>
+      <button class="btn btn-ghost btn-sm" id="nav-admin-btn" onclick="showAdmin()" style="display:none">⚙ Admin</button>
+      <button class="btn btn-ghost btn-sm" onclick="logout()">Salir</button>
+    </div>
+  </nav>
+
+  <div class="hero">
+    <span class="hero-label">Temporada 2024 / 25</span>
+    <h1>La <em>Liga</em><br>Española</h1>
+    <p class="hero-sub">Selecciona un equipo para ver su plantilla y alineación</p>
+  </div>
+
+  <div id="admin-banner-teams" class="admin-banner" style="display:none">
+    ⚙ <span>Modo <strong>Administrador</strong> activo — Haz clic en un equipo para editar plantilla o usa el panel admin para gestionar equipos.</span>
+  </div>
+
+  <div class="section">
+    <div class="section-header">
+      <span class="section-title">Equipos</span>
+    </div>
+    <div id="teams-grid" class="teams-grid"><div class="spinner"></div></div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════════════════ -->
+<!-- VIEW: TEAM DETAIL                                                            -->
+<!-- ════════════════════════════════════════════════════════════════════════════ -->
+<div id="view-detail" class="view">
+  <nav>
+    <a class="logo" href="#" onclick="showTeams()">⚽ <span>La</span>Liga</a>
+    <div class="nav-right">
+      <div class="user-pill" id="nav-user2"></div>
+      <button class="btn btn-ghost btn-sm" id="nav-admin-btn2" onclick="showAdmin()" style="display:none">⚙ Admin</button>
+      <button class="btn btn-ghost btn-sm" onclick="logout()">Salir</button>
+    </div>
+  </nav>
+
+  <div class="detail-header">
+    <div class="detail-header-inner">
+      <button class="btn btn-ghost btn-sm" onclick="showTeams()" style="margin-bottom:1rem">← Volver</button>
+      <div class="detail-top">
+        <div class="detail-emoji" id="d-emoji"></div>
+        <div class="detail-info">
+          <h1 id="d-name"></h1>
+          <div class="detail-meta" id="d-meta"></div>
+        </div>
+        <div class="detail-actions" id="d-actions"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="pitch-wrap">
+    <div class="pitch-section-title">Alineación titular</div>
+    <div class="pitch" id="pitch"></div>
+  </div>
+
+  <div class="player-section">
+    <div class="table-card">
+      <div class="table-card-header">
+        <span class="section-title">Plantilla completa</span>
+        <button class="btn btn-green btn-sm" id="add-player-btn" onclick="openPlayerModal()" style="display:none">+ Jugador</button>
+      </div>
+      <div style="overflow-x:auto">
+        <table>
+          <thead>
+            <tr><th>#</th><th>Jugador</th><th>Posición</th><th>Nacionalidad</th><th>Edad</th><th id="actions-th" style="display:none">Acciones</th></tr>
+          </thead>
+          <tbody id="players-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════════════════ -->
+<!-- VIEW: ADMIN PANEL                                                            -->
+<!-- ════════════════════════════════════════════════════════════════════════════ -->
+<div id="view-admin" class="view">
+  <nav>
+    <a class="logo" href="#" onclick="showTeams()">⚽ <span>La</span>Liga</a>
+    <div class="nav-right">
+      <div class="user-pill" id="nav-user3"></div>
+      <button class="btn btn-ghost btn-sm" onclick="showTeams()">Vista pública</button>
+      <button class="btn btn-ghost btn-sm" onclick="logout()">Salir</button>
+    </div>
+  </nav>
+
+  <div class="admin-banner" style="margin-top:1.5rem">
+    ⚙ <span>Panel de <strong>Administración</strong> — Gestiona equipos y jugadores de La Liga</span>
+  </div>
+
+  <div class="section" style="margin-top:0">
+    <div class="section-header">
+      <span class="section-title">Equipos registrados</span>
+      <button class="btn btn-green btn-sm" onclick="openTeamModal()">+ Nuevo equipo</button>
+    </div>
+    <div class="admin-table-wrap">
+      <table>
+        <thead>
+          <tr><th>Equipo</th><th>Ciudad</th><th>Estadio</th><th>Fundación</th><th>Jugadores</th><th>Acciones</th></tr>
+        </thead>
+        <tbody id="admin-teams-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════════════════ -->
+<!-- JAVASCRIPT                                                                   -->
+<!-- ════════════════════════════════════════════════════════════════════════════ -->
+<script>
+const API = '/api';
+let token = localStorage.getItem('ll_token') || null;
+let role  = localStorage.getItem('ll_role')  || null;
+let uname = localStorage.getItem('ll_user')  || null;
+let currentTeamId = null;
+
+/* ── FLASH ──────────────────────────────────────────────────────────────────── */
+function flash(msg, type='success') {
+  const c = document.getElementById('flash-container');
+  const d = document.createElement('div');
+  d.className = `flash ${type}`;
+  d.innerHTML = `<span>${type==='success'?'✓':type==='error'?'✕':'ℹ'}</span> ${msg}`;
+  c.appendChild(d);
+  setTimeout(() => d.remove(), 3500);
+}
+
+/* ── API FETCH ──────────────────────────────────────────────────────────────── */
+async function apiFetch(path, opts={}) {
+  const headers = {'Content-Type':'application/json'};
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+  const r = await fetch(API + path, {...opts, headers});
+  const data = await r.json().catch(() => ({}));
+  return {ok: r.ok, status: r.status, data};
+}
+
+/* ── AUTH ───────────────────────────────────────────────────────────────────── */
+async function handleLogin(e) {
+  e.preventDefault();
+  const u = document.getElementById('login-user').value.trim();
+  const p = document.getElementById('login-pass').value;
+  const {ok, data} = await apiFetch('/auth/login', {
+    method:'POST', body: JSON.stringify({username:u, password:p})
+  });
+  if (ok) {
+    token = data.token; role = data.role; uname = data.username;
+    localStorage.setItem('ll_token', token);
+    localStorage.setItem('ll_role',  role);
+    localStorage.setItem('ll_user',  uname);
+    await showTeams();
+    flash(`Bienvenido, ${uname}!`);
+  } else {
+    flash(data.error || 'Error de autenticación', 'error');
+  }
+}
+
+function logout() {
+  token = role = uname = null;
+  localStorage.removeItem('ll_token');
+  localStorage.removeItem('ll_role');
+  localStorage.removeItem('ll_user');
+  showView('view-login');
+}
+
+/* ── VIEWS ──────────────────────────────────────────────────────────────────── */
+function showView(id) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function renderNavUser(suffix='') {
+  const el = document.getElementById('nav-user'+suffix);
+  if (!el) return;
+  el.innerHTML = `👤 ${uname} <span class="role-badge ${role}">${role}</span>`;
+  const adminBtn = document.getElementById('nav-admin-btn'+suffix);
+  if (adminBtn) adminBtn.style.display = role==='admin' ? '' : 'none';
+}
+
+/* ── TEAMS LIST ─────────────────────────────────────────────────────────────── */
+async function showTeams() {
+  if (!token) { showView('view-login'); return; }
+  showView('view-teams');
+  renderNavUser('');
+  document.getElementById('admin-banner-teams').style.display = role==='admin' ? '' : 'none';
+  document.getElementById('teams-grid').innerHTML = '<div class="spinner"></div>';
+
+  const {ok, data} = await apiFetch('/teams');
+  if (!ok) { flash('Error al cargar equipos','error'); return; }
+  renderTeamsGrid(data);
+}
+
+function renderTeamsGrid(teams) {
+  const g = document.getElementById('teams-grid');
+  if (!teams.length) {
+    g.innerHTML = `<div class="empty-state"><div class="icon">⚽</div><p>No hay equipos. Inicia sesión como admin para añadir.</p></div>`;
+    return;
+  }
+  g.innerHTML = teams.map(t => `
+    <div class="team-card" style="--tc:${t.primary_color}" onclick="showTeamDetail(${t.id})">
+      <div class="team-card-top">
+        <div class="team-emoji">${t.logo_emoji}</div>
+        <div>
+          <div class="team-name">${t.name}</div>
+          <div class="team-city">📍 ${t.city||''}</div>
+        </div>
+      </div>
+      <div class="team-meta">
+        <span>🏟 ${t.stadium||''}</span>
+        <span>⚽ ${t.player_count} jugadores</span>
+      </div>
+      ${role==='admin'?`<div style="margin-top:.5rem;display:flex;gap:6px">
+        <button class="btn btn-ghost btn-sm btn-icon" onclick="event.stopPropagation();openTeamModal(${JSON.stringify(t).replace(/"/g,'&quot;')})">✏</button>
+        <button class="btn btn-red btn-sm btn-icon" onclick="event.stopPropagation();deleteTeam(${t.id},'${escHtml(t.name)}')">🗑</button>
+      </div>`:''}
+    </div>`).join('');
+}
+
+function escHtml(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+/* ── TEAM DETAIL ─────────────────────────────────────────────────────────────── */
+async function showTeamDetail(id) {
+  currentTeamId = id;
+  showView('view-detail');
+  renderNavUser('2');
+  document.getElementById('pitch').innerHTML = '<div class="spinner"></div>';
+  document.getElementById('players-tbody').innerHTML = '';
+
+  const {ok, data: t} = await apiFetch(`/teams/${id}`);
+  if (!ok) { flash('Error al cargar equipo','error'); showTeams(); return; }
+
+  document.getElementById('d-emoji').textContent = t.logo_emoji;
+  document.getElementById('d-name').textContent  = t.name;
+  document.getElementById('d-meta').innerHTML    =
+    `<span>📍 ${t.city||''}</span><span>🏟 ${t.stadium||''}</span><span>📅 Est. ${t.founded||''}</span>
+     <span><span class="color-dot" style="background:${t.primary_color}"></span> ${t.primary_color}</span>`;
+
+  if (role === 'admin') {
+    document.getElementById('d-actions').innerHTML =
+      `<button class="btn btn-ghost btn-sm" onclick="openTeamModal(${JSON.stringify(t).replace(/"/g,"'")})">✏ Editar equipo</button>
+       <button class="btn btn-red btn-sm" onclick="deleteTeam(${t.id},'${escHtml(t.name)}')">🗑 Eliminar</button>`;
+    document.getElementById('add-player-btn').style.display = '';
+    document.getElementById('actions-th').style.display = '';
+  } else {
+    document.getElementById('d-actions').innerHTML = '';
+    document.getElementById('add-player-btn').style.display = 'none';
+    document.getElementById('actions-th').style.display = 'none';
+  }
+
+  renderPitch(t.players);
+  renderPlayers(t.players);
+}
+
+function renderPitch(players) {
+  const byPos = {Portero:[], Defensa:[], Centrocampista:[], Delantero:[]};
+  players.forEach(p => { if(byPos[p.position]) byPos[p.position].push(p); });
+
+  const rows = ['Delantero','Centrocampista','Defensa','Portero'];
+  document.getElementById('pitch').innerHTML = rows.map(pos =>
+    `<div class="pitch-row">
+      ${(byPos[pos]||[]).map(p=>`
+        <div class="pitch-player">
+          <div class="pitch-num">${p.number||'?'}</div>
+          <div class="pitch-pname">${p.name.split(' ').pop()}</div>
+        </div>`).join('')}
+    </div>`
+  ).join('');
+}
+
+function renderPlayers(players) {
+  const sorted = [...players].sort((a,b)=>(a.number||99)-(b.number||99));
+  const isAdmin = role === 'admin';
+  document.getElementById('players-tbody').innerHTML = sorted.map(p => `
+    <tr>
+      <td><span class="num-pill">${p.number||'—'}</span></td>
+      <td><strong>${escHtml(p.name)}</strong></td>
+      <td><span class="pos-pill pos-${p.position}">${p.position}</span></td>
+      <td style="color:var(--muted)">${escHtml(p.nationality||'')}</td>
+      <td style="color:var(--muted)">${p.age||'—'}</td>
+      ${isAdmin?`<td>
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-ghost btn-sm btn-icon" onclick="openPlayerModal(${JSON.stringify(p).replace(/"/g,'&quot;')})">✏</button>
+          <button class="btn btn-red btn-sm btn-icon" onclick="deletePlayer(${p.id},'${escHtml(p.name)}')">🗑</button>
+        </div></td>`:''}
+    </tr>`).join('');
+}
+
+/* ── ADMIN PANEL ──────────────────────────────────────────────────────────────── */
+async function showAdmin() {
+  if (role !== 'admin') { flash('Acceso restringido', 'error'); return; }
+  showView('view-admin');
+  renderNavUser('3');
+  await loadAdminTeams();
+}
+
+async function loadAdminTeams() {
+  document.getElementById('admin-teams-tbody').innerHTML =
+    '<tr><td colspan="6"><div class="spinner"></div></td></tr>';
+  const {ok, data} = await apiFetch('/teams');
+  if (!ok) return;
+  document.getElementById('admin-teams-tbody').innerHTML = data.map(t=>`
+    <tr>
+      <td><span style="font-size:1.3rem">${t.logo_emoji}</span> <strong>${escHtml(t.name)}</strong></td>
+      <td style="color:var(--muted)">${escHtml(t.city||'')}</td>
+      <td style="color:var(--muted);font-size:.82rem">${escHtml(t.stadium||'')}</td>
+      <td style="color:var(--muted)">${t.founded||''}</td>
+      <td><span style="background:rgba(0,200,83,.1);padding:3px 10px;border-radius:50px;font-size:.82rem">${t.player_count}</span></td>
+      <td>
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-ghost btn-sm" onclick="showTeamDetail(${t.id})">👁 Ver</button>
+          <button class="btn btn-ghost btn-sm" onclick="openTeamModal(${JSON.stringify(t).replace(/"/g,'&quot;')})">✏ Editar</button>
+          <button class="btn btn-red btn-sm" onclick="deleteTeam(${t.id},'${escHtml(t.name)}')">🗑</button>
+        </div>
+      </td>
+    </tr>`).join('');
+}
+
+/* ── MODAL HELPERS ───────────────────────────────────────────────────────────── */
+function openModal(html) {
+  document.getElementById('modal').innerHTML = html;
+  document.getElementById('overlay').classList.remove('hidden');
+}
+function closeModal(e) {
+  if (!e || e.target === document.getElementById('overlay'))
+    document.getElementById('overlay').classList.add('hidden');
+}
+function forceCloseModal() {
+  document.getElementById('overlay').classList.add('hidden');
+}
+
+/* ── TEAM MODAL ──────────────────────────────────────────────────────────────── */
+function openTeamModal(team=null) {
+  const isEdit = !!team;
+  openModal(`
+    <h2>${isEdit ? '✏ Editar' : '+ Nuevo'} Equipo</h2>
+    <form onsubmit="submitTeam(event,${isEdit?team.id:'null'})">
+      <div class="form-row">
+        <div class="form-group"><label>Nombre *</label><input id="t-name" value="${escHtml(team?.name||'')}" required></div>
+        <div class="form-group"><label>Ciudad</label><input id="t-city" value="${escHtml(team?.city||'')}"></div>
+      </div>
+      <div class="form-group"><label>Estadio</label><input id="t-stadium" value="${escHtml(team?.stadium||'')}"></div>
+      <div class="form-row">
+        <div class="form-group"><label>Fundación</label><input id="t-founded" type="number" min="1800" max="2024" value="${team?.founded||''}"></div>
+        <div class="form-group"><label>Emoji escudo</label><input id="t-emoji" value="${team?.logo_emoji||'⚽'}" maxlength="5"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Color primario</label><input id="t-color1" type="color" value="${team?.primary_color||'#e63946'}" style="height:42px;cursor:pointer"></div>
+        <div class="form-group"><label>Color secundario</label><input id="t-color2" type="color" value="${team?.secondary_color||'#ffffff'}" style="height:42px;cursor:pointer"></div>
+      </div>
+      <div class="modal-actions">
+        <button type="submit" class="btn btn-green">${isEdit ? '💾 Guardar' : '+ Crear'}</button>
+        <button type="button" class="btn btn-ghost" onclick="forceCloseModal()">Cancelar</button>
+      </div>
+    </form>`);
+}
+
+async function submitTeam(e, id) {
+  e.preventDefault();
+  const body = {
+    name: document.getElementById('t-name').value.trim(),
+    city: document.getElementById('t-city').value.trim(),
+    stadium: document.getElementById('t-stadium').value.trim(),
+    founded: parseInt(document.getElementById('t-founded').value)||null,
+    logo_emoji: document.getElementById('t-emoji').value,
+    primary_color: document.getElementById('t-color1').value,
+    secondary_color: document.getElementById('t-color2').value,
+  };
+  const {ok, data} = id
+    ? await apiFetch(`/teams/${id}`, {method:'PUT', body:JSON.stringify(body)})
+    : await apiFetch('/teams', {method:'POST', body:JSON.stringify(body)});
+  if (ok) {
+    flash(id ? 'Equipo actualizado ✓' : 'Equipo creado ✓');
+    forceCloseModal();
+    if (document.getElementById('view-admin').classList.contains('active')) loadAdminTeams();
+    else showTeams();
+  } else {
+    flash(data.error||'Error al guardar', 'error');
+  }
+}
+
+async function deleteTeam(id, name) {
+  if (!confirm(`¿Eliminar el equipo "${name}"? Se eliminarán también sus jugadores.`)) return;
+  const {ok, data} = await apiFetch(`/teams/${id}`, {method:'DELETE'});
+  if (ok) {
+    flash('Equipo eliminado ✓');
+    if (document.getElementById('view-admin').classList.contains('active')) loadAdminTeams();
+    else showTeams();
+  } else flash(data.error||'Error al eliminar','error');
+}
+
+/* ── PLAYER MODAL ────────────────────────────────────────────────────────────── */
+function openPlayerModal(player=null) {
+  const isEdit = !!player;
+  const positions = ['Portero','Defensa','Centrocampista','Delantero'];
+  openModal(`
+    <h2>${isEdit ? '✏ Editar' : '+ Nuevo'} Jugador</h2>
+    <form onsubmit="submitPlayer(event,${isEdit?player.id:'null'})">
+      <div class="form-row">
+        <div class="form-group"><label>Nombre *</label><input id="p-name" value="${escHtml(player?.name||'')}" required></div>
+        <div class="form-group"><label>Dorsal</label><input id="p-num" type="number" min="1" max="99" value="${player?.number||''}"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Posición *</label>
+          <select id="p-pos">
+            ${positions.map(pos=>`<option value="${pos}" ${player?.position===pos?'selected':''}>${pos}</option>`).join('')}
+          </select></div>
+        <div class="form-group"><label>Edad</label><input id="p-age" type="number" min="15" max="50" value="${player?.age||''}"></div>
+      </div>
+      <div class="form-group"><label>Nacionalidad</label><input id="p-nat" value="${escHtml(player?.nationality||'')}"></div>
+      <div class="modal-actions">
+        <button type="submit" class="btn btn-green">${isEdit?'💾 Guardar':'+ Añadir'}</button>
+        <button type="button" class="btn btn-ghost" onclick="forceCloseModal()">Cancelar</button>
+      </div>
+    </form>`);
+}
+
+async function submitPlayer(e, id) {
+  e.preventDefault();
+  const body = {
+    name: document.getElementById('p-name').value.trim(),
+    position: document.getElementById('p-pos').value,
+    number: parseInt(document.getElementById('p-num').value)||null,
+    nationality: document.getElementById('p-nat').value.trim(),
+    age: parseInt(document.getElementById('p-age').value)||null,
+    team_id: currentTeamId,
+  };
+  const {ok, data} = id
+    ? await apiFetch(`/players/${id}`, {method:'PUT', body:JSON.stringify(body)})
+    : await apiFetch('/players', {method:'POST', body:JSON.stringify(body)});
+  if (ok) {
+    flash(id ? 'Jugador actualizado ✓' : 'Jugador añadido ✓');
+    forceCloseModal();
+    showTeamDetail(currentTeamId);
+  } else {
+    flash(data.error||'Error al guardar','error');
+  }
+}
+
+async function deletePlayer(id, name) {
+  if (!confirm(`¿Eliminar a "${name}"?`)) return;
+  const {ok, data} = await apiFetch(`/players/${id}`, {method:'DELETE'});
+  if (ok) { flash('Jugador eliminado ✓'); showTeamDetail(currentTeamId); }
+  else flash(data.error||'Error al eliminar','error');
+}
+
+/* ── INIT ────────────────────────────────────────────────────────────────────── */
+document.addEventListener('keydown', e => { if(e.key==='Escape') forceCloseModal(); });
+
+// Si ya hay token, ir directo a equipos
+if (token) showTeams();
+</script>
+</body>
+</html>
