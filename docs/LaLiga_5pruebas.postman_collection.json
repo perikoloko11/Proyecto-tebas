@@ -1,0 +1,188 @@
+{
+  "info": {
+    "name": "LaLiga App - 5 Pruebas",
+    "description": "Coleccion de 5 pruebas para la API de LaLiga App (contenedor unico en http://localhost)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base_url", "value": "http://localhost", "type": "string" },
+    { "key": "token",    "value": "",                 "type": "string" },
+    { "key": "team_id",  "value": "",                 "type": "string" }
+  ],
+  "item": [
+    {
+      "name": "1 - Health Check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/health",
+          "host": ["{{base_url}}"],
+          "path": ["api", "health"]
+        },
+        "description": "Verifica que la API esta activa y el contenedor responde correctamente."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 200', () => pm.response.to.have.status(200));",
+              "pm.test('API activa', () => {",
+              "    const json = pm.response.json();",
+              "    pm.expect(json.status).to.eql('ok');",
+              "});",
+              "pm.test('Tiempo de respuesta < 1000ms', () => {",
+              "    pm.expect(pm.response.responseTime).to.be.below(1000);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "2 - Login Admin",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"Admin1234!\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/auth/login",
+          "host": ["{{base_url}}"],
+          "path": ["api", "auth", "login"]
+        },
+        "description": "Autentica al administrador y guarda el JWT en la variable {{token}}."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Login exitoso - status 200', () => pm.response.to.have.status(200));",
+              "pm.test('Token presente en respuesta', () => {",
+              "    const json = pm.response.json();",
+              "    pm.expect(json.token).to.be.a('string');",
+              "    pm.collectionVariables.set('token', json.token);",
+              "});",
+              "pm.test('Role es admin', () => {",
+              "    pm.expect(pm.response.json().role).to.eql('admin');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "3 - Listar Equipos",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/teams",
+          "host": ["{{base_url}}"],
+          "path": ["api", "teams"]
+        },
+        "description": "Obtiene la lista completa de los 10 equipos. Endpoint publico, no requiere token."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 200', () => pm.response.to.have.status(200));",
+              "pm.test('Devuelve 10 equipos', () => {",
+              "    const json = pm.response.json();",
+              "    pm.expect(json).to.be.an('array');",
+              "    pm.expect(json.length).to.eql(10);",
+              "});",
+              "pm.test('Estructura correcta', () => {",
+              "    const eq = pm.response.json()[0];",
+              "    pm.expect(eq).to.have.all.keys('id','name','city','stadium','founded','logo_emoji','primary_color','secondary_color','player_count');",
+              "});",
+              "pm.test('Ordenado alfabeticamente', () => {",
+              "    pm.expect(pm.response.json()[0].name).to.eql('Athletic Club');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "4 - Crear Equipo",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type",  "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{token}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"RCD Espanyol\",\n  \"city\": \"Barcelona\",\n  \"stadium\": \"RCDE Stadium\",\n  \"founded\": 1900,\n  \"logo_emoji\": \"⬜\",\n  \"primary_color\": \"#003DA5\",\n  \"secondary_color\": \"#FFFFFF\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/teams",
+          "host": ["{{base_url}}"],
+          "path": ["api", "teams"]
+        },
+        "description": "Crea un nuevo equipo. Requiere token de admin. Guarda el ID en {{team_id}} para la prueba 5."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Equipo creado - status 201', () => pm.response.to.have.status(201));",
+              "pm.test('ID asignado correctamente', () => {",
+              "    const json = pm.response.json();",
+              "    pm.expect(json.id).to.be.a('number');",
+              "    pm.collectionVariables.set('team_id', json.id);",
+              "});",
+              "pm.test('Nombre guardado correctamente', () => {",
+              "    pm.expect(pm.response.json().name).to.eql('RCD Espanyol');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "5 - Eliminar Equipo",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{token}}" }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/teams/{{team_id}}",
+          "host": ["{{base_url}}"],
+          "path": ["api", "teams", "{{team_id}}"]
+        },
+        "description": "Elimina el equipo creado en la prueba 4. Usa {{team_id}} guardado automaticamente."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Equipo eliminado - status 200', () => pm.response.to.have.status(200));",
+              "pm.test('Mensaje de confirmacion', () => {",
+              "    pm.expect(pm.response.json().message).to.eql('Equipo eliminado');",
+              "});",
+              "pm.collectionVariables.set('team_id', '');"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    }
+  ]
+}
