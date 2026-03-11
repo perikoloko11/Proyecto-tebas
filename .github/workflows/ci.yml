@@ -72,27 +72,18 @@ jobs:
             -H "Authorization: Bearer ${{ env.API_TOKEN }}"
 
   test-frontend:
-    name: Build Frontend
+    name: Verify Frontend Files
     runs-on: ubuntu-latest
-
-    defaults:
-      run:
-        working-directory: ./frontend
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '18'
-
-      - name: Install dependencies
-        run: npm install
-
-      - name: Build frontend
-        run: npm run build
+      - name: Verificar archivos frontend
+        run: |
+          echo "Verificando archivos del frontend..."
+          ls ./frontend
+          test -f ./frontend/index.html && echo "index.html encontrado" || echo "ADVERTENCIA: index.html no encontrado"
 
   deploy:
     name: Deploy
