@@ -85,11 +85,11 @@ Importa `LaLiga_5pruebas.postman_collection.json` en Postman y ejecuta en orden:
 
 | # | Prueba | Método | Endpoint |
 |---|---|---|---|
-| 1 | Health Check | `GET` | `/api/health` |
-| 2 | Login Admin | `POST` | `/api/auth/login` |
-| 3 | Listar Equipos | `GET` | `/api/teams` |
-| 4 | Crear Equipo | `POST` | `/api/teams` |
-| 5 | Eliminar Equipo | `DELETE` | `/api/teams/:id` |
+| 1 | Health Check | `GET` | `/api/health` | Verifica que el servidor está activo y funcionando correctamente.
+| 2 | Login Admin | `POST` | `/api/auth/login` | Envía credenciales de administrador y recibe un token de autenticación si son válidas.
+| 3 | Listar Equipos | `GET` | `/api/teams` | Obtiene todos los registros de equipos almacenados en la base de datos
+| 4 | Crear Equipo | `POST` | `/api/teams` |Envía los datos para que sea registrado en la base de datos
+| 5 | Eliminar Equipo | `DELETE` | `/api/teams/:id` | Elimina el equipo cuyo ID se especifica en la URL.
 
 > El token y el `team_id` se guardan automáticamente entre pruebas.
 
