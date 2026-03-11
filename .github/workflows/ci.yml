@@ -1,0 +1,77 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    name: Run API Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Start server
+        run: npm start &
+        env:
+          PORT: 3000
+
+      - name: Wait for server to be ready
+        run: sleep 5
+
+      # 1. Health Check
+      - name: Health Check
+        run: |
+          curl --fail http://localhost:3000/api/health
+
+      # 2. Login Admin
+      - name: Login Admin
+        run: |
+          curl --fail -X POST http://localhost:3000/api/auth/login \
+            -H "Content-Type: application/json" \
+            -d '{"email": "${{ secrets.ADMIN_EMAIL }}", "password": "${{ secrets.ADMIN_PASSWORD }}"}'
+
+      # 3. Listar Equipos
+      - name: Listar Equipos
+        run: |
+          curl --fail http://localhost:3000/api/teams \
+            -H "Authorization: Bearer ${{ secrets.API_TOKEN }}"
+
+      # 4. Crear Equipo
+      - name: Crear Equipo
+        run: |
+          curl --fail -X POST http://localhost:3000/api/teams \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer ${{ secrets.API_TOKEN }}" \
+            -d '{"name": "Equipo Test CI"}'
+
+      # 5. Eliminar Equipo
+      - name: Eliminar Equipo
+        run: |
+          curl --fail -X DELETE http://localhost:3000/api/teams/1 \
+            -H "Authorization: Bearer ${{ secrets.API_TOKEN }}"
+
+  deploy:
+    name: Deploy
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Deploy to production
+        run: echo "Aquí va tu comando de despliegue"
