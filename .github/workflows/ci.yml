@@ -7,9 +7,13 @@ on:
     branches: [main]
 
 jobs:
-  test:
-    name: Run API Tests
+  test-backend:
+    name: Test Backend API
     runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: ./backend
 
     steps:
       - name: Checkout code
@@ -24,7 +28,7 @@ jobs:
         run: npm install
 
       - name: Start server
-        run: npm start &
+        run: node index.js &
         env:
           PORT: 3000
 
@@ -36,37 +40,64 @@ jobs:
         run: |
           curl --fail http://localhost:3000/api/health
 
-      # 2. Login Admin
+      # 2. Login Admin y guardar token
       - name: Login Admin
         run: |
-          curl --fail -X POST http://localhost:3000/api/auth/login \
+          TOKEN=$(curl --fail -s -X POST http://localhost:3000/api/auth/login \
             -H "Content-Type: application/json" \
-            -d '{"email": "${{ secrets.ADMIN_EMAIL }}", "password": "${{ secrets.ADMIN_PASSWORD }}"}'
+            -d '{"email": "${{ secrets.ADMIN_EMAIL }}", "password": "${{ secrets.ADMIN_PASSWORD }}"}' \
+            | grep -o '"token":"[^"]*"' | cut -d'"' -f4)
+          echo "API_TOKEN=$TOKEN" >> $GITHUB_ENV
 
       # 3. Listar Equipos
       - name: Listar Equipos
         run: |
           curl --fail http://localhost:3000/api/teams \
-            -H "Authorization: Bearer ${{ secrets.API_TOKEN }}"
+            -H "Authorization: Bearer ${{ env.API_TOKEN }}"
 
-      # 4. Crear Equipo
+      # 4. Crear Equipo y guardar ID
       - name: Crear Equipo
         run: |
-          curl --fail -X POST http://localhost:3000/api/teams \
+          TEAM_ID=$(curl --fail -s -X POST http://localhost:3000/api/teams \
             -H "Content-Type: application/json" \
-            -H "Authorization: Bearer ${{ secrets.API_TOKEN }}" \
-            -d '{"name": "Equipo Test CI"}'
+            -H "Authorization: Bearer ${{ env.API_TOKEN }}" \
+            -d '{"name": "Equipo Test CI"}' \
+            | grep -o '"id":[0-9]*' | cut -d':' -f2)
+          echo "TEAM_ID=$TEAM_ID" >> $GITHUB_ENV
 
-      # 5. Eliminar Equipo
+      # 5. Eliminar Equipo creado
       - name: Eliminar Equipo
         run: |
-          curl --fail -X DELETE http://localhost:3000/api/teams/1 \
-            -H "Authorization: Bearer ${{ secrets.API_TOKEN }}"
+          curl --fail -X DELETE http://localhost:3000/api/teams/${{ env.TEAM_ID }} \
+            -H "Authorization: Bearer ${{ env.API_TOKEN }}"
+
+  test-frontend:
+    name: Build Frontend
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: ./frontend
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build frontend
+        run: npm run build
 
   deploy:
     name: Deploy
     runs-on: ubuntu-latest
-    needs: test
+    needs: [test-backend, test-frontend]
     if: github.ref == 'refs/heads/main'
 
     steps:
