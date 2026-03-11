@@ -69,13 +69,13 @@ Authorization: Bearer <token>
 
 | Control OWASP | Medida aplicada |
 |---|---|
-| **A01 — Broken Access Control** | Decorador `@admin_required` en todos los endpoints de escritura. Los usuarios con `role=user` reciben `403 Forbidden`. |
-| **A02 — Cryptographic Failures** | Contraseñas hasheadas con `pbkdf2:sha256` (600.000 iteraciones) mediante Werkzeug. Nunca se almacenan en texto plano. |
-| **A03 — Injection** | ORM SQLAlchemy en todas las consultas (sin SQL manual). Función `clean()` elimina `< > " '` de todas las entradas. |
-| **A05 — Security Misconfiguration** | MySQL con `bind-address=127.0.0.1` (solo interno). Flask en `debug=False`. Nginx como único punto de entrada. |
-| **A07 — Auth Failures** | JWT con expiración de 1 hora. Respuesta genérica `401` que no revela si el usuario existe. |
-| **A08 — Data Integrity** | Dependencias fijadas a versiones exactas en `requirements.txt`. Validación de existencia de recursos antes de operar. |
-| **A09 — Logging & Monitoring** | Logging en Flask con IP y timestamp. Logs separados por servicio en `/var/log/supervisor/`. |
+| **A01 — Broken Access Control** | Asegura que solo los administradores puedan hacer cambios.. |
+| **A02 — Cryptographic Failures** | Protege las contraseñas almacenadas en la base de datos.. |
+| **A03 — Injection** |  Evita que atacantes manipulen tu base de datos con texto malicioso.. |
+| **A05 — Security Misconfiguration** | Cierra puertas innecesarias en tu servidor. |
+| **A07 — Auth Failures** | Controla las sesiones y no da pistas a los atacantes. |
+| **A08 — Data Integrity** | Garantiza que tu código usa dependencias fiables y sin alteraciones. |
+| **A09 — Logging & Monitoring** | Deja rastro de todo lo que ocurre en tu aplicación. |
 
 ---
 
