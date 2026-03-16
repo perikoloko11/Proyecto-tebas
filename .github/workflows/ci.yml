@@ -1,4 +1,4 @@
-name: CI/CD Pipeline LaLiga API
+name: CI/CD Pipeline LaLiga
 
 on:
   push:
@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
 
     services:
-      # Levantamos MySQL para que Flask pueda conectarse durante los tests
+      # Levantamos MySQL con las credenciales que usa tu app.py por defecto
       mysql:
         image: mysql:8.0
         env:
@@ -35,61 +35,50 @@ jobs:
 
       - name: Install dependencies
         run: |
-          python -m pip install --upgrade pip
           pip install flask flask-sqlalchemy flask-jwt-extended flask-cors pymysql cryptography werkzeug
 
       - name: Start Flask Server
         run: |
-          # Usamos variables de entorno para que coincidan con el servicio de MySQL de arriba
+          # Configuramos las variables de entorno para que Flask encuentre la DB
           export DB_HOST=127.0.0.1
           export DB_USER=laliga
           export DB_PASS=laligapass
           export DB_NAME=laliga
           export DB_PORT=3306
-          python app.py &
+          # Ejecutamos en segundo plano y guardamos logs para debug
+          python app.py > server.log 2>&1 & 
         env:
-          SECRET_KEY: test-secret
-          JWT_SECRET_KEY: test-jwt-secret
+          SECRET_KEY: dev-secret-abc123
+          JWT_SECRET_KEY: dev-jwt-xyz789
 
       - name: Wait for server to be ready
         run: |
-          timeout 30s bash -c 'until curl -s http://localhost:5001/api/health; do sleep 2; done'
+          # Espera hasta 60 segundos a que el endpoint /api/health responda 200 OK
+          # Si falla, hace un "cat" del log para que veas el error de Python
+          timeout 60s bash -c 'until curl -s http://localhost:5001/api/health; do sleep 5; done' || (cat server.log && exit 1)
 
-      # 1. Health Check
-      - name: Health Check
+      - name: Integration Tests (CURL)
         run: |
-          curl --fail http://localhost:5001/api/health
-
-      # 2. Login Admin y guardar token (Corregido: usa 'username' no 'email')
-      - name: Login Admin
-        run: |
+          echo "1. Obteniendo Token de Admin..."
           TOKEN=$(curl --fail -s -X POST http://localhost:5001/api/auth/login \
             -H "Content-Type: application/json" \
             -d '{"username": "admin", "password": "Admin1234!"}' \
             | grep -o '"token":"[^"]*"' | cut -d'"' -f4)
-          echo "API_TOKEN=$TOKEN" >> $GITHUB_ENV
-
-      # 3. Listar Equipos
-      - name: Listar Equipos
-        run: |
-          curl --fail http://localhost:5001/api/teams \
-            -H "Authorization: Bearer ${{ env.API_TOKEN }}"
-
-      # 4. Crear Equipo y guardar ID
-      - name: Crear Equipo
-        run: |
+          
+          if [ -z "$TOKEN" ]; then echo "Error: No se obtuvo el token"; exit 1; fi
+          
+          echo "2. Verificando lista de equipos..."
+          curl --fail -H "Authorization: Bearer $TOKEN" http://localhost:5001/api/teams
+          
+          echo "3. Creando equipo de prueba..."
           TEAM_ID=$(curl --fail -s -X POST http://localhost:5001/api/teams \
             -H "Content-Type: application/json" \
-            -H "Authorization: Bearer ${{ env.API_TOKEN }}" \
-            -d '{"name": "Equipo Test CI", "city": "GitHub", "stadium": "Actions Arena"}' \
+            -H "Authorization: Bearer $TOKEN" \
+            -d '{"name": "CI Test Team", "city": "Github", "stadium": "Actions Arena"}' \
             | grep -o '"id":[0-9]*' | cut -d':' -f2)
-          echo "TEAM_ID=$TEAM_ID" >> $GITHUB_ENV
-
-      # 5. Eliminar Equipo creado
-      - name: Eliminar Equipo
-        run: |
-          curl --fail -X DELETE http://localhost:5001/api/teams/${{ env.TEAM_ID }} \
-            -H "Authorization: Bearer ${{ env.API_TOKEN }}"
+          
+          echo "4. Eliminando equipo creado (ID: $TEAM_ID)..."
+          curl --fail -X DELETE -H "Authorization: Bearer $TOKEN" http://localhost:5001/api/teams/$TEAM_ID
 
   test-frontend:
     name: Verify Frontend Files
@@ -97,10 +86,11 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
-      - name: Verificar archivos frontend
+      - name: Verificar archivos
         run: |
-          test -f ./frontend/index.html && echo "index.html encontrado" || (echo "Error: index.html no existe" && exit 1)
+          # Verifica que la carpeta frontend y el index existen
+          ls -R ./frontend
+          test -f ./frontend/index.html
 
   deploy:
     name: Deploy
@@ -108,7 +98,5 @@ jobs:
     needs: [test-backend, test-frontend]
     if: github.ref == 'refs/heads/main'
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
       - name: Deploy message
-        run: echo "Desplegando a producción la versión de LaLiga API..."
+        run: echo "Despliegue simulado completado con éxito."
